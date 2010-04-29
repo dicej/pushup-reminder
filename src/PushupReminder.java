@@ -13,6 +13,10 @@ import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.graphics.Image;
 
 public class PushupReminder {
+  private static final int MillisPerSecond = 1000;
+  private static final int MillisPerMinute = MillisPerSecond * 60;
+  private static final int MillisPerHour = MillisPerMinute * 60;
+  
   public static void main(String[] args) {
     final String title = "Pushup Reminder";
     final String message = "Time to do pushups!";
@@ -23,7 +27,6 @@ public class PushupReminder {
       final Shell shell = new Shell(display);
 
       final TrayItem item = new TrayItem(tray, SWT.NONE);
-      item.setToolTipText(title);
 
       Image icon = new Image(display, 32, 32);
       item.setImage(icon);
@@ -46,21 +49,33 @@ public class PushupReminder {
       item.addListener(SWT.MenuDetect, clickListener);
       item.addListener(SWT.Selection, clickListener);
 
-      final boolean[] startTimer = new boolean[] { true };
+      long now = System.currentTimeMillis();
+      long reminderTime = roundUp(now, MillisPerHour);
+      long updateTime = 0;
+
       while (! shell.isDisposed()) {
-        if (startTimer[0]) {
-          startTimer[0] = false;
-          display.timerExec(timeUntilTopOfHour(), new Runnable() {
-              public void run() {
-                alert(shell, item, title, message);
-                startTimer[0] = true;
-              }
+        if (now > updateTime) {
+          updateTime = roundUp(now, MillisPerSecond);
+          item.setToolTipText(title + " - "
+                              + minutes((int) (reminderTime - now)) + ":"
+                              + seconds((int) (reminderTime - now))
+                              + " remaining");
+
+          display.timerExec((int) (updateTime - now), new Runnable() {
+              public void run() { }
             });
+        }
+
+        if (now > reminderTime) {
+          reminderTime = roundUp(now, MillisPerHour);
+          alert(shell, item, title, message);
         }
 
         if (! display.readAndDispatch()) {
           display.sleep();
         }
+
+        now = System.currentTimeMillis();
       }
 
       tray.dispose();
@@ -69,12 +84,37 @@ public class PushupReminder {
     }
   }
 
-  private static int timeUntilTopOfHour() {
-    final long MillisPerHour = 60 * 60 * 1000;
-    long now = System.currentTimeMillis();
-    long then = (((now - 1) / MillisPerHour) * MillisPerHour) + MillisPerHour;
-    System.out.println("waiting " + (then - now) + "ms");
-    return (int) (then - now);
+  private static long roundUp(long numerator, long divisor) {
+    return (((numerator - 1) / divisor) * divisor) + divisor;
+  }
+
+  private static String minutes(int milliseconds) {
+    return pad(milliseconds / MillisPerMinute, 2);
+  }
+
+  private static String seconds(int milliseconds) {
+    return pad((milliseconds % MillisPerMinute) / MillisPerSecond, 2);
+  }
+
+  private static int pow(int n, int power) {
+    int x = 1;
+    for (; power > 0; -- power) {
+      x *= n;
+    }
+    return x;
+  }
+
+  private static String pad(int number, int width) {
+    StringBuilder sb = new StringBuilder();
+    for (int i = pow(10, width - 1); i > 0; i /= 10) {
+      if (number < i) {
+        sb.append('0');
+      }
+    }
+    if (number != 0) {
+      sb.append(number);
+    }
+    return sb.toString();
   }
 
   private static void alert(Shell shell,

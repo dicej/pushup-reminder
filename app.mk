@@ -136,7 +136,7 @@ ifeq ($(platform),windows)
 	endif
 
 	cflags = -I$(inc) $(common-cflags)
-	lflags = -L$(lib) $(common-lflags) -lws2_32 -Wl,--kill-at -mwindows -mconsole
+	lflags = -L$(lib) $(common-lflags) -lws2_32 -Wl,--kill-at -mwindows
 
 	ifeq ($(arch),x86_64)
 		wine-include-flags =

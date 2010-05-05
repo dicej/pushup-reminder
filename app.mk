@@ -43,8 +43,17 @@ stage1 = $(bld)/stage1
 stage2 = $(bld)/stage2
 vm-bld = $(vm)/build/$(platform)-$(arch)$(options)
 
-cxx = g++
-cc = gcc
+ifneq ($(platform),darwin)
+	ifeq ($(arch),i386)
+		mflag = -m32
+	endif
+	ifeq ($(arch),x86_64)
+		mflag = -m64
+	endif
+endif
+
+cxx = g++ $(mflag)
+cc = gcc $(mflag)
 dlltool = dlltool
 objcopy = objcopy
 proguard = $(root)/proguard4.4/lib/proguard.jar

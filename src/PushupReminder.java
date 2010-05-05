@@ -11,13 +11,16 @@ import org.eclipse.swt.widgets.TrayItem;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.Device;
+
+import java.io.InputStream;
 
 public class PushupReminder {
   private static final int MillisPerSecond = 1000;
   private static final int MillisPerMinute = MillisPerSecond * 60;
   private static final int MillisPerHour = MillisPerMinute * 60;
   
-  public static void main(String[] args) {
+  public static void main(String[] args) throws Exception {
     final String title = "Pushup Reminder";
     final String message = "Time to do pushups!";
 
@@ -28,7 +31,7 @@ public class PushupReminder {
 
       final TrayItem item = new TrayItem(tray, SWT.NONE);
 
-      Image icon = new Image(display, 32, 32);
+      Image icon = loadIcon(display);
       item.setImage(icon);
 
       Listener clickListener = new Listener() {
@@ -81,6 +84,21 @@ public class PushupReminder {
       tray.dispose();
     } else {
       System.err.println("no tray!");
+    }
+  }
+
+  private static Image loadIcon(Device device) throws Exception {
+    InputStream in = PushupReminder.class.getClassLoader().getResourceAsStream
+      ("icon.png");
+
+    if (in != null) {
+      try {
+        return new Image(device, in);
+      } finally {
+        in.close();
+      }
+    } else {
+      return new Image(device, 16, 16);
     }
   }
 

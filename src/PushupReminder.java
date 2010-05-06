@@ -52,33 +52,38 @@ public class PushupReminder {
       item.addListener(SWT.MenuDetect, clickListener);
       item.addListener(SWT.Selection, clickListener);
 
-      long now = System.currentTimeMillis();
-      long reminderTime = roundUp(now, MillisPerHour);
-      long updateTime = 0;
+      Runnable task = new Runnable() {
+          long reminderTime;
+          long updateTime;
+          
+          public void run() {
+            long now = System.currentTimeMillis();
+
+            if (now > reminderTime) {
+              if (reminderTime != 0) {
+                alert(shell, item, title, message);
+              }
+              reminderTime = roundUp(now, MillisPerHour);
+            }
+
+            if (now > updateTime) {
+              item.setToolTipText(title + " - "
+                                  + minutes((int) (reminderTime - now)) + ":"
+                                  + seconds((int) (reminderTime - now))
+                                  + " remaining");
+              updateTime = roundUp(now, MillisPerSecond);
+            }
+
+            display.timerExec(1000, this);
+          }
+        };
+
+      task.run();
 
       while (! shell.isDisposed()) {
-        if (now > updateTime) {
-          updateTime = roundUp(now, MillisPerSecond);
-          item.setToolTipText(title + " - "
-                              + minutes((int) (reminderTime - now)) + ":"
-                              + seconds((int) (reminderTime - now))
-                              + " remaining");
-
-          display.timerExec((int) (updateTime - now), new Runnable() {
-              public void run() { }
-            });
-        }
-
-        if (now > reminderTime) {
-          reminderTime = roundUp(now, MillisPerHour);
-          alert(shell, item, title, message);
-        }
-
         if (! display.readAndDispatch()) {
           display.sleep();
         }
-
-        now = System.currentTimeMillis();
       }
 
       tray.dispose();
